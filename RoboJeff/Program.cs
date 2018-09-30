@@ -14,6 +14,14 @@ using MonoBrickFirmware.Movement;
 
 namespace RoboJeffV2
 {
+    /* 
+     * Using Classes for readability
+     * Classes aren't actually necessarry but it helps with reading the code as you know that a function should be doing something related to the class name
+     * 
+     * 
+     * 
+     */
+
     // variables for text
     public class vars
     {
@@ -36,17 +44,18 @@ namespace RoboJeffV2
     // Sensor class -> contains all the objects for the sensors and functions for the sensor
     public class V_Sensor // virtual sensor
     {
-        public EV3UltrasonicSensor US = new EV3UltrasonicSensor(SensorPort.In1);            // Ultrasonic sensor object
-        public EV3GyroSensor gyro = new EV3GyroSensor(SensorPort.In2, GyroMode.Angle);      // Gyro sensor object
-        public EV3TouchSensor touch = new EV3TouchSensor(SensorPort.In3);                   // touch sensor object
-        public EV3ColorSensor color = new EV3ColorSensor(SensorPort.In4);                   // color sensor object
-        public EV3GyroSensor reset_gyro = new EV3GyroSensor(SensorPort.In2, GyroMode.Angle); // resettable gyro sensor
+        public EV3UltrasonicSensor US = new EV3UltrasonicSensor(SensorPort.In1);            // Ultrasonic sensor object     used
+        public EV3GyroSensor gyro = new EV3GyroSensor(SensorPort.In4, GyroMode.Angle);      // Gyro sensor object           used
+        //public EV3TouchSensor touch = new EV3TouchSensor(SensorPort.In3);                   // touch sensor object          not used
+        //public EV3ColorSensor color = new EV3ColorSensor(SensorPort.In1);                   // color sensor object          not used
+        public EV3GyroSensor reset_gyro = new EV3GyroSensor(SensorPort.In2, GyroMode.Angle); // resettable gyro sensor      used
 
-        // colour in string value
+        /* colour in string value
         public string read_color()
         {
             return color.ReadAsString();
         }
+        */
 
         // value in mm?;
         public int read_US()
@@ -70,7 +79,7 @@ namespace RoboJeffV2
             reset_gyro.Reset();
         }
 
-        // return booleon value of true when pressed and false when not pressed;
+        /* return booleon value of true when pressed and false when not pressed;
         public bool read_touch()
         {
             if (touch.Read() == 0)
@@ -82,8 +91,110 @@ namespace RoboJeffV2
                 return true;
             }
         }
+        */
     }
 
+
+    public class V_Motor // Virtual Motor
+    {
+        // each movement function has its own standard TCPR ( tacho_count_per_rotation ) value due to the use of different functions.
+
+        public V_Sensor vsensor = new V_Sensor();
+        public Motor motorR = new Motor(MotorPort.OutA);                        // left motor ( faced from input input )
+        public Motor motorL = new Motor(MotorPort.OutD);                            // right motor ( faced from input buttons )
+        public Motor motorArm = new Motor(MotorPort.OutB);                          // precise motor
+        public Vehicle Robot_Vehicle = new Vehicle(MotorPort.OutA, MotorPort.OutD);     // full vehicle control object
+
+        const sbyte speed = 50;                                                   // speed the motors rotate around their axis
+        const sbyte turn_speed = 10;                                              // speed the robot turns around
+        const uint tcpr = 360;
+
+
+        // forward function using vehicle
+        public void forward(double rotations)
+        {
+            Robot_Vehicle.ReverseLeft = false;
+            Robot_Vehicle.ReverseRight = false;
+
+            motorL.ResetTacho();
+            motorR.ResetTacho();
+
+            double tacho_count = tcpr * rotations;
+
+            WaitHandle wait_event = Robot_Vehicle.Forward(speed, ((uint)tacho_count), true);
+            wait_event.WaitOne();
+
+            int tmr = motorR.GetTachoCount();
+            int tml = motorL.GetTachoCount();
+            int tm_average = (int)(tmr + tml) / 2;
+            double dist_travelled = (tm_average / tcpr) * Robot.wheel_sizes[Robot.wheel];
+            double fac = dist_travelled / Robot.scale_triangle[0];
+            Robot.pos[0] = fac * Robot.scale_triangle[1];
+            Robot.pos[1] = fac * Robot.scale_triangle[2];
+
+            Robot_Vehicle.Off();
+            /// source -> https://github.com/Larsjep/monoev3/blob/release/VehicleExample/Program.cs
+            /// Code is heavily changed but inspired by this example.
+        }
+
+        // do not input 360 or 0 degrees due to loop back error
+        public void Rotate(double degrees, bool dir = true)
+        {
+            const int error_marge = 0;
+            degrees = Math.Abs(degrees) - error_marge;
+
+            ButtonEvents buts = new ButtonEvents();
+            bool done = false;
+
+            vsensor.reset_gyro_r();
+
+            // spin left
+            if (dir)
+            {
+                // left wheel forwards right wheel backwards
+                motorL.SetSpeed(turn_speed);
+                motorR.SetSpeed((sbyte)-turn_speed);
+
+            }
+            // spin right
+            else
+            {
+                // left wheel forwards right wheel backwards
+                motorL.SetSpeed((sbyte)-turn_speed);
+                motorR.SetSpeed(turn_speed);
+
+            }
+            double curr_turned = 0; // needed because of when vsensor is called after the while loop it will add more degrees than the currently turned amount ( seems to be a bug in the libraries )
+            while (Math.Abs(vsensor.read_gyro_r()) <= degrees && !done)
+            {
+                buts.EscapePressed += () => {
+                    done = true;
+                };
+                vars.print(vsensor.read_gyro().ToString());
+                curr_turned = vsensor.read_gyro_r();
+            }
+
+            motorL.Brake();
+            motorR.Brake();
+
+            Robot.angle = curr_turned;
+        }
+
+        public void MoveArm(double degrees, int speed = 100)
+        {
+            if (degrees < 0)
+            {
+                speed = speed * -1;
+                degrees = degrees * -1;
+            }
+            motorArm.ResetTacho();
+
+            WaitHandle WaitHandle = motorArm.PowerProfile((sbyte)speed, 0, (uint)degrees, 0, true);
+            WaitHandle.WaitOne();
+
+
+        }
+    }
 
     // virtual challenge ( contains information such as the position of the challenge and the size of it )
     public class Challenge
@@ -130,18 +241,18 @@ namespace RoboJeffV2
 		 * 	  a			  A          b
 		 */
 
-        public double angle = 0;                           // the angle the robot stands relative to start point in degrees
-        public double[] scale_triangle = new double[3];    // the triange of the path the robot is taking C being the path A being the X-size and B being the Y-size
-        public int[] pos = { 19, 7 };                       // the position of the robot relative to the robot 
-        public int[] hit_box = { 0, 0, 31, 14 };           // the hitbox of the robot
+        static public double angle = 0;                                // the angle the robot stands relative to start point in degrees
+        static public double axle = 14;                                // diameter of turning circle ( ball bearing end not accounted for )
 
-        public double err_marge = 0.5;                     // the marge of error the robot would generally take when arriving to destination
-        public double[] wheel_sizes = { 4.3, 5.6, 6.9 };   // the diameters of the wheel sizes
-        public double min_rot = 0.1;                       // minimum of wheel rotations done by robot
-        public double axle = 14;                            // diameter of turning circle ( ball bearing end not accounted for )
-                                                            /// CHANGE THIS
-        public int wheel = 1;                              // current wheel size being used.
+        static public double[] pos = { 19, 7 };                           // the position of the robot relative to the robot 
+        static public double[] hit_box = { 0, 0, 31, 14 };                // the hitbox of the robot
 
+        static public double[] wheel_sizes = { 4.3, 5.6, 6.9 }; // the diameters of the wheel sizes
+        static public int wheel = 1;                            // current wheel size being used.
+
+        static public double[] scale_triangle = new double[3];  // the triange of the path the robot is taking C being the path A being the X-size and B being the Y-size
+
+        static public V_Motor vmotor = new V_Motor();
 
         // rotates
 
@@ -158,11 +269,11 @@ namespace RoboJeffV2
             // change angle that is less than 0 to 180 - angle
             if (angle < 0)
             {
-                this.turn(180 + angle);
+                vmotor.Rotate(180 + angle);
             }
             else
             {
-                this.turn(angle);
+                vmotor.Rotate(angle);
             }
         }
 
@@ -172,8 +283,8 @@ namespace RoboJeffV2
         {
             double x = challenge.pos[0];
             double y = challenge.pos[1];
-            double dx = x - this.pos[0];                // getting A side of triangle
-            double dy = y - this.pos[1];                // getting B side of triangle
+            double dx = x - Robot.pos[0];                // getting A side of triangle
+            double dy = y - Robot.pos[1];                // getting B side of triangle
             double rc = dy / dx;                        // rc needed to get rotation needed to face destination ( atan(rc) = degrees relative to x-axis
             double angle = Math.Atan(rc);               // getting angle needed to face destination
             this.rotate(angle * (180 / Math.PI));       // rotates to destination
@@ -190,9 +301,9 @@ namespace RoboJeffV2
 
             double rel_dist = Math.Sqrt((dx * dx) + (dy * dy));   // gets C side of triangle sqrt( C^2 = A^2 + B^2 ) = C
             double[] rel_triangle = { rel_dist, dx, dy };               // creates the rel_triangle
-            this.scale_triangle = rel_triangle;                         // sets the scale_triangle ( to rel_triangle )
-            double rotations = rel_dist / (this.wheel_sizes[this.wheel] * Math.PI); // calculates the rotations needed to go to challenge
-            this.forward(rotations);                                    // move forward for rotations
+            Robot.scale_triangle = rel_triangle;                         // sets the scale_triangle ( to rel_triangle )
+            double rotations = rel_dist / (Robot.wheel_sizes[Robot.wheel] * Math.PI); // calculates the rotations needed to go to challenge
+            vmotor.forward(rotations);                                    // move forward for rotations
         }
 
         public void check_path(Challenge challenge)
@@ -204,86 +315,7 @@ namespace RoboJeffV2
         // rotates to the challenge when arrived at the designated challenge stop point
         public void rotate_at_end(Challenge challenge)
         {
-            this.rotate(challenge.angle - this.angle);
-        }
-
-
-        /// MOTOR FUNCTIONS START HERE
-        // each movement function has its own standard TCPR ( tacho_count_per_rotation ) value due to the use of different functions.
-
-        public V_Sensor vsensor = new V_Sensor();
-        public Motor motorR = new Motor(MotorPort.OutA);                        // left motor ( faced from input input )
-        public Motor motorL = new Motor(MotorPort.OutD);                            // right motor ( faced from input buttons )
-        public Motor motorArm = new Motor(MotorPort.OutB);                          // precise motor
-        public Vehicle Robot_Vehicle = new Vehicle(MotorPort.OutA, MotorPort.OutD);     // full vehicle control object
-
-        sbyte speed = 50;                                                   // speed the motors rotate around their axis
-        sbyte turn_speed = 10;                                              // speed the robot turns around
-
-        // forward function using vehicle
-        public void forward(double rotations)
-        {
-            const uint tcpr = 360;
-            Robot_Vehicle.ReverseLeft = false;
-            Robot_Vehicle.ReverseRight = false;
-
-            double tacho_count = tcpr * rotations;
-            int x = 0;
-            WaitHandle wait_event = Robot_Vehicle.Forward(speed, ((uint)tacho_count), true);
-            while (!wait_event.WaitOne(0))
-            {   // the 0 indicates that the following code is not blocked by Waiting for the event to be set
-                x++;
-            }
-
-            vars.print(x.ToString());
-
-            Robot_Vehicle.Off();
-            /// source -> https://github.com/Larsjep/monoev3/blob/release/VehicleExample/Program.cs
-            /// Code is heavily changed but inspired by this example.
-        }
-
-        // do not input 360 or 0 degrees due to loop back error
-        public void turn(double degrees, bool dir = true)
-        {
-            const uint tcpr = 350;
-            const int error_marge = 0;
-            degrees = Math.Abs(degrees) - error_marge;
-
-            ButtonEvents buts = new ButtonEvents();
-            bool done = false;
-
-            vsensor.reset_gyro_r();
-
-            // spin left
-            if (dir)
-            {
-                // left wheel forwards right wheel backwards
-                motorL.SetSpeed(turn_speed);
-                motorR.SetSpeed((sbyte)-turn_speed);
-
-            }
-            // spin right
-            else
-            {
-                // left wheel forwards right wheel backwards
-                motorL.SetSpeed((sbyte)-turn_speed);
-                motorR.SetSpeed(turn_speed);
-
-            }
-            double curr_turned = 0; // needed because of when vsensor is called after the while loop it will add more degrees than the currently turned amount ( seems to be a bug in the libraries )
-            while (Math.Abs(vsensor.read_gyro_r()) <= degrees && !done)
-            {
-                buts.EscapePressed += () => {
-                    done = true;
-                };
-                vars.print(vsensor.read_gyro().ToString());
-                curr_turned = vsensor.read_gyro_r();
-            }
-
-            motorL.Brake();
-            motorR.Brake();
-
-            this.angle = curr_turned;
+            this.rotate(challenge.angle - angle);
         }
     }
 
@@ -297,6 +329,7 @@ namespace RoboJeffV2
             // NOTE: Problem was a non-assigned length double array
             // TODO: check x, y position and angle the robot should stand to challenge
 
+
             Challenge chal_1 = new Challenge(3, 102, 0, new double[] { 3, 102, 91, 108 }, "M1");
             Challenge chal_2 = new Challenge(57.5, 65, 0, new double[] { 57.5, 65, 70.5, 95.5 }, "M4");
             Challenge chal_3 = new Challenge(65, 58.5, 0, new double[] { 65, 58.5, 77.5, 64 }, "M5");
@@ -306,13 +339,20 @@ namespace RoboJeffV2
 
             Robot robot = new Robot();
 
-            robot.forward(5);
+            Robot.vmotor.MoveArm(90);
+            Robot.vmotor.MoveArm(-90);
         }
     }
 
 
-
-
+    /// programming notes
+    /// use *waithandle_object*.waitOne(0) to check if the waithandle has been set or not
+    /// When using the motors's tacho count they seem to sometimes work with these settings but can break for an unknown reason
+    /// suspecting that the tacho count is altered before the program which brings the robot off balance
+    /// reason of suspection is that after reusing a few values ( doesn't matter what values ) they seem to work properly again
+    /// if robot is acting up call the movement functions in the Robot.vmotor to readjust the values this might take a few reuploads of the program
+    /// 
+    /// Dont use the rotate class with 0 or 360 degrees because those will cause a loop back and make the robot spin forever
 
 
 }
