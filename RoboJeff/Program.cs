@@ -1,85 +1,99 @@
 using System;
-using MonoBrickFirmware;
-using MonoBrickFirmware.Display.Dialogs;
-using MonoBrickFirmware.Display;
-using MonoBrickFirmware.Movement;
-using MonoBrickFirmware.Sensors;
-using MonoBrickFirmware.UserInput;
-using MonoBrickFirmware.Sound;
-using System.Threading;
-
-/* 
- * 
- * 
- * 
- * 
- */
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace RoboJeff
 {
-    class MainClass
+
+    public class Challenge
     {
-        public class variables
+        public int[] hit_box, pos;
+        public int angle;
+        public string name;
+
+        public Challenge(int x, int y, int angle, int[] hitbox, string name)
         {
-            public Font f = Font.SmallFont;
-            public Point offset = new Point(0, 12);
-            public static Point p = new Point(10, Lcd.Height - 75);
-            public static Point boxSize = new Point(100, 24);
-            public Rectangle box = new Rectangle(p, p + boxSize);
-            public EV3UltrasonicSensor US = new EV3UltrasonicSensor(SensorPort.In1);
-            public EV3GyroSensor gyro = new EV3GyroSensor(SensorPort.In2, GyroMode.Angle);
-            public EV3TouchSensor touch = new EV3TouchSensor(SensorPort.In3);
-            public EV3ColorSensor color = new EV3ColorSensor(SensorPort.In4);
-            /// source -> https://github.com/Larsjep/monoev3/blob/release/LcdExample/Program.cs
+            this.hit_box = hitbox;
+            this.pos[0] = x;
+            this.pos[1] = y;
+            this.angle = angle;
+            this.name = name;
+        }
+    }
+
+    class Robot
+    {
+        double angle = 0;                   // in degrees
+        double[] rel_triangle = new double[3];
+        int[] pos = { 0, 0 };
+        int[] hit_box = { 0, 0, 20, 15 };   // change to size of robot
+        double err_marge = 0.5;
+        double[] wheel_sizes = { 4.3, 5.6, 6.9 };
+        double min_rot = 0.1;
+        double axle = 8;                    // change to size of axle
+        int wheel = 0;
+
+        public void rotate(double angle)
+        {
+            double perc = angle / 360;
+            double rotations = perc * (this.axle / 2 * Math.PI) / this.wheel_sizes[this.wheel];
+            this.angle = angle;
         }
 
-        public static bool done = false;
-
-        public static void Main(string[] args)
+        public double[] rotate_to_chall(Challenge challenge)
         {
-            variables vars = new variables();
-            //Speaker speaker = new Speaker (50);
-
-            LcdConsole.WriteLine("Herro");
-
-            ManualResetEvent terminateProgram = new ManualResetEvent(false);
-            ButtonEvents buts = new ButtonEvents();
-            int i = 0;
-            while (!done)
-            {
-                buts.EscapePressed += () => {
-                    done = true;
-                    terminateProgram.Set();
-                };
-                buts.UpPressed += () => {
-                    LcdConsole.WriteLine("Beep");
-                };
-                buts.DownPressed += () => {
-                    LcdConsole.WriteLine("Buzz");
-                };
-                buts.EnterPressed += () => {
-                    LcdConsole.WriteLine("enter");
-                };
-                read_degree(vars, i);
-                i++;
-            }
-
-            terminateProgram.WaitOne();
-
-            /// source -> https://github.com/Larsjep/monoev3/blob/release/SoundExample/Program.cs
+            int x = challenge.pos[0];
+            int y = challenge.pos[1];
+            double dx = x - this.pos[0];
+            double dy = y - this.pos[1];
+            double rc = dy / dx;
+            double angle = Math.Abs(Math.Atan(rc));
+            this.rotate(angle * (180 / Math.PI));
+            double[] result = { dx, dy };
+            return result;
         }
 
-
-        public static void read_degree(variables vars, int i)
+        public void goto_chall(Challenge challenge)
         {
-            Lcd.Clear();
-            Lcd.WriteTextBox(vars.f, vars.box + vars.offset * 0, "US: " + vars.US.Read().ToString() + " " + i.ToString(), true);
-            Lcd.WriteTextBox(vars.f, vars.box + vars.offset * 1, "Gyro: " + vars.gyro.Read().ToString() + " " + i.ToString(), true);
-            Lcd.WriteTextBox(vars.f, vars.box + vars.offset * 2, "Touch: " + vars.touch.Read().ToString() + " " + i.ToString(), true);
-            Lcd.WriteTextBox(vars.f, vars.box + vars.offset * 3, "Color: " + vars.color.Read().ToString() + " " + i.ToString(), true);
-            Lcd.Update();
+            double[] result = this.rotate_to_chall(challenge);
+            double dx = result[0];
+            double dy = result[1];
 
-            /// source -> https://github.com/Larsjep/monoev3/blob/release/LcdExample/Program.cs
+            double rel_dist = Math.Sqrt(Math.Exp(dx) + Math.Exp(dy));
+            double[] rel_triangle = { rel_dist, dx, dy };
+            this.rel_triangle = rel_triangle;
+            double rotations = rel_dist / this.wheel_sizes[this.wheel]
+        }
+
+        public void check_path(Challenge challenge)
+        {
+
+        }
+
+        public void rotate_at_end(Challenge challenge)
+        {
+            this.rotate(challenge.angle - this.angle);
+        }
+    }
+
+    class Motor
+    {
+        Robot robot;
+
+        public Motor(Robot robot)
+        {
+            this.robot = robot;
+        }
+    }
+
+    class Program
+    {
+
+        static void Main(string[] args)
+        {
+            double[] board_size = { 238.2, 114.3 };
         }
     }
 }
