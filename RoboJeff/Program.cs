@@ -331,7 +331,6 @@ namespace RoboJeff
             // NOTE: Problem was a non-assigned length double array
             // TODO: check x, y position and angle the robot should stand to challenge
 
-
             Challenge chal_1 = new Challenge(3, 102, 0, new double[] { 3, 102, 91, 108 }, "M1");
             Challenge chal_2 = new Challenge(57.5, 65, 0, new double[] { 57.5, 65, 70.5, 95.5 }, "M4");
             Challenge chal_3 = new Challenge(65, 58.5, 0, new double[] { 65, 58.5, 77.5, 64 }, "M5");
@@ -340,26 +339,14 @@ namespace RoboJeff
             Challenge chal_6 = new Challenge(112, 30, 0, new double[] { 112, 30, 138, 56 }, "M6");
 
             Robot robot = new Robot();
-
+            V_Motor vmotor = new V_Motor();
             ManualResetEvent wait = new ManualResetEvent(false);
 
             robot.goto_chall(chal_1, wait);
 
             wait.WaitOne();
             // execute challenge
-
-            Line line1 = new Line(new MPoint(0, 0), new MPoint(10, 10));
-            Rect rect1 = new Rect(new MPoint(11, 2), new MPoint(17, 7));
-
-            if (rect1.intersect(line1))
-            {
-                vars.print("intersect");
-            }
-            else
-            {
-                vars.print("miss");
-            }
-            
+            vmotor.MoveArm(30, 50);
             
         }
     }
