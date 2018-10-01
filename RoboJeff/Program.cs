@@ -352,15 +352,6 @@ namespace RoboJeff
             
             ManualResetEvent wait = new ManualResetEvent(false);
 
-            robot.goto_chall(chal_1, wait);
-
-            // added some comments right here for example
-
-            wait.WaitOne();
-            // execute challenge
-
-            vmotor.MoveArm(160, 80);
-
             // beep at end of challenge
             Speaker spk = new Speaker(50);
             spk.Beep();
