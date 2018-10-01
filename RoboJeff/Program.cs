@@ -345,6 +345,8 @@ namespace RoboJeff
 
             robot.goto_chall(chal_1, wait);
 
+            // added some comments right here for example
+
             wait.WaitOne();
             // execute challenge
 
