@@ -47,9 +47,9 @@ namespace RoboJeff
     {
         public EV3UltrasonicSensor US = new EV3UltrasonicSensor(SensorPort.In1);              // Ultrasonic sensor object     used
         public EV3GyroSensor gyro = new EV3GyroSensor(SensorPort.In4, GyroMode.Angle);        // Gyro sensor object           used
-                                                                                              //public EV3TouchSensor touch = new EV3TouchSensor(SensorPort.In3);                   // touch sensor object          not used
-                                                                                              //public EV3ColorSensor color = new EV3ColorSensor(SensorPort.In1);                   // color sensor object          not used
-        public EV3GyroSensor reset_gyro = new EV3GyroSensor(SensorPort.In4, GyroMode.Angle);  // resettable gyro sensor       used
+        //public EV3TouchSensor touch = new EV3TouchSensor(SensorPort.In3);                   // touch sensor object          not used
+        //public EV3ColorSensor color = new EV3ColorSensor(SensorPort.In1);                   // color sensor object          not used
+        public EV3GyroSensor reset_gyro = new EV3GyroSensor(SensorPort.In2, GyroMode.Angle);  // resettable gyro sensor       used
 
         /* colour in string value
         public string read_color()
@@ -148,8 +148,6 @@ namespace RoboJeff
             bool done = false;
 
             vsensor.reset_gyro_r();
-            vars.print(degrees.ToString());
-            Thread.Sleep(2000);
 
             // spin left
             if (dir)
@@ -173,7 +171,7 @@ namespace RoboJeff
                 buts.EscapePressed += () => {
                     done = true;
                 };
-                vars.print(vsensor.read_gyro_r().ToString());
+                vars.print(vsensor.read_gyro().ToString());
                 curr_turned = vsensor.read_gyro_r();
             }
 
@@ -247,7 +245,7 @@ namespace RoboJeff
         static public double angle = 0;                                     // the angle the robot stands relative to start point in degrees
         static public double axle = 14;                                     // diameter of turning circle ( ball bearing end not accounted for )
 
-        static public double[] pos = { 44.5, 25.5 }; // 24, 26 };                            // starting position robot 
+        static public double[] pos = { 19, 7 };                             // the position of the robot relative to the robot 
         static public double[] hit_box = { 0, 0, 31, 14 };                  // the hitbox of the robot
 
         static public double[] wheel_sizes = { 4.3, 5.6, 6.9 };             // the diameters of the wheel sizes
@@ -307,6 +305,7 @@ namespace RoboJeff
             Robot.scale_triangle = rel_triangle;                                        // sets the scale_triangle ( to rel_triangle )
             double rotations = rel_dist / (Robot.wheel_sizes[Robot.wheel] * Math.PI);   // calculates the rotations needed to go to challenge
             vmotor.forward(rotations);                                                  // move forward for rotations
+            this.rotate_at_end(challenge);
             wait.Set();
         }
 
@@ -334,27 +333,17 @@ namespace RoboJeff
             // TODO: check x, y position and angle the robot should stand to challenge
 
 
-            Challenge chal_1 = new Challenge(9, 91, 0, new double[] { 3, 102, 91, 108 }, "M1");
-            Challenge chal_2 = new Challenge(81.5, 81, 0, new double[] { 57.5, 65, 70.5, 95.5 }, "M4");
+            Challenge chal_1 = new Challenge(14, 92, -120, new double[] { 3, 102, 91, 108 }, "M1");
+            Challenge chal_2 = new Challenge(57.5, 65, 0, new double[] { 57.5, 65, 70.5, 95.5 }, "M4");
             Challenge chal_3 = new Challenge(65, 58.5, 0, new double[] { 65, 58.5, 77.5, 64 }, "M5");
             Challenge chal_4 = new Challenge(142, 95, 0, new double[] { 142, 95, 165, 107 }, "M9");
             Challenge chal_5 = new Challenge(153, 77.5, 0, new double[] { 153, 77.5, 166, 90 }, "M10");
             Challenge chal_6 = new Challenge(112, 30, 0, new double[] { 112, 30, 138, 56 }, "M6");
 
             Robot robot = new Robot();
-            V_Motor vmotor = new V_Motor();
-
             ManualResetEvent wait = new ManualResetEvent(false);
-
-            robot.goto_chall(chal_1, wait);
-
-            // added some comments right here for example
-
-            wait.WaitOne();
-            // execute challenge
-
-            vmotor.MoveArm(90, 100);
-            vmotor.MoveArm(-90, 100);
+            
+            
         }
     }
 
