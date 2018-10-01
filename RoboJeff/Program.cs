@@ -11,8 +11,9 @@ using MonoBrickFirmware.Sensors;
 using MonoBrickFirmware.Display;
 using MonoBrickFirmware.UserInput;
 using MonoBrickFirmware.Movement;
+using RoboJeff_Special_classes;
 
-namespace RoboJeffV2
+namespace RoboJeff
 {
     /* 
      * Using Classes for readability
@@ -25,12 +26,12 @@ namespace RoboJeffV2
     // variables for text
     public class vars
     {
-        public static Font f = Font.MediumFont;                         // font size
-        public static Point offset = new Point(0, 12);                 // offset point
-        public static Point p = new Point(10, Lcd.Height - 75); // point?
-        public static Point boxSize = new Point(100, 24);       // boxsize
-        public static Rectangle box = new Rectangle(p, p + boxSize);   // rectangle of the box
-                                                                       /// source -> https://github.com/Larsjep/monoev3/blob/release/LcdExample/Program.cs
+        public static Font f = Font.MediumFont;                             // font size
+        public static Point offset = new Point(0, 12);                      // offset point
+        public static Point p = new Point(10, Lcd.Height - 75);             // point?
+        public static Point boxSize = new Point(100, 24);                   // boxsize
+        public static Rectangle box = new Rectangle(p, p + boxSize);        // rectangle of the box
+                                                                            /// source -> https://github.com/Larsjep/monoev3/blob/release/LcdExample/Program.cs
 
         public static void print(string text)
         {
@@ -44,11 +45,11 @@ namespace RoboJeffV2
     // Sensor class -> contains all the objects for the sensors and functions for the sensor
     public class V_Sensor // virtual sensor
     {
-        public EV3UltrasonicSensor US = new EV3UltrasonicSensor(SensorPort.In1);            // Ultrasonic sensor object     used
-        public EV3GyroSensor gyro = new EV3GyroSensor(SensorPort.In4, GyroMode.Angle);      // Gyro sensor object           used
+        public EV3UltrasonicSensor US = new EV3UltrasonicSensor(SensorPort.In1);              // Ultrasonic sensor object     used
+        public EV3GyroSensor gyro = new EV3GyroSensor(SensorPort.In4, GyroMode.Angle);        // Gyro sensor object           used
         //public EV3TouchSensor touch = new EV3TouchSensor(SensorPort.In3);                   // touch sensor object          not used
         //public EV3ColorSensor color = new EV3ColorSensor(SensorPort.In1);                   // color sensor object          not used
-        public EV3GyroSensor reset_gyro = new EV3GyroSensor(SensorPort.In2, GyroMode.Angle); // resettable gyro sensor      used
+        public EV3GyroSensor reset_gyro = new EV3GyroSensor(SensorPort.In2, GyroMode.Angle);  // resettable gyro sensor       used
 
         /* colour in string value
         public string read_color()
@@ -100,13 +101,13 @@ namespace RoboJeffV2
         // each movement function has its own standard TCPR ( tacho_count_per_rotation ) value due to the use of different functions.
 
         public V_Sensor vsensor = new V_Sensor();
-        public Motor motorR = new Motor(MotorPort.OutA);                        // left motor ( faced from input input )
-        public Motor motorL = new Motor(MotorPort.OutD);                            // right motor ( faced from input buttons )
-        public Motor motorArm = new Motor(MotorPort.OutB);                          // precise motor
+        public Motor motorR = new Motor(MotorPort.OutA);                                // left motor ( faced from input input )
+        public Motor motorL = new Motor(MotorPort.OutD);                                // right motor ( faced from input buttons )
+        public Motor motorArm = new Motor(MotorPort.OutB);                              // precise motor
         public Vehicle Robot_Vehicle = new Vehicle(MotorPort.OutA, MotorPort.OutD);     // full vehicle control object
 
-        const sbyte speed = 50;                                                   // speed the motors rotate around their axis
-        const sbyte turn_speed = 10;                                              // speed the robot turns around
+        const sbyte speed = 50;                                                         // speed the motors rotate around their axis
+        const sbyte turn_speed = 10;                                                    // speed the robot turns around
         const uint tcpr = 360;
 
 
@@ -241,16 +242,16 @@ namespace RoboJeffV2
 		 * 	  a			  A          b
 		 */
 
-        static public double angle = 0;                                // the angle the robot stands relative to start point in degrees
-        static public double axle = 14;                                // diameter of turning circle ( ball bearing end not accounted for )
+        static public double angle = 0;                                     // the angle the robot stands relative to start point in degrees
+        static public double axle = 14;                                     // diameter of turning circle ( ball bearing end not accounted for )
 
-        static public double[] pos = { 19, 7 };                           // the position of the robot relative to the robot 
-        static public double[] hit_box = { 0, 0, 31, 14 };                // the hitbox of the robot
+        static public double[] pos = { 19, 7 };                             // the position of the robot relative to the robot 
+        static public double[] hit_box = { 0, 0, 31, 14 };                  // the hitbox of the robot
 
-        static public double[] wheel_sizes = { 4.3, 5.6, 6.9 }; // the diameters of the wheel sizes
-        static public int wheel = 1;                            // current wheel size being used.
+        static public double[] wheel_sizes = { 4.3, 5.6, 6.9 };             // the diameters of the wheel sizes
+        static public int wheel = 1;                                        // current wheel size being used.
 
-        static public double[] scale_triangle = new double[3];  // the triange of the path the robot is taking C being the path A being the X-size and B being the Y-size
+        static public double[] scale_triangle = new double[3];              // the triange of the path the robot is taking C being the path A being the X-size and B being the Y-size
 
         static public V_Motor vmotor = new V_Motor();
 
@@ -283,27 +284,27 @@ namespace RoboJeffV2
         {
             double x = challenge.pos[0];
             double y = challenge.pos[1];
-            double dx = x - Robot.pos[0];                // getting A side of triangle
-            double dy = y - Robot.pos[1];                // getting B side of triangle
-            double rc = dy / dx;                        // rc needed to get rotation needed to face destination ( atan(rc) = degrees relative to x-axis
-            double angle = Math.Atan(rc);               // getting angle needed to face destination
-            this.rotate(angle * (180 / Math.PI));       // rotates to destination
-            double[] result = { dx, dy };               // returns A and B side of triangle
+            double dx = x - Robot.pos[0];                                               // getting A side of triangle
+            double dy = y - Robot.pos[1];                                               // getting B side of triangle
+            double rc = dy / dx;                                                        // rc needed to get rotation needed to face destination ( atan(rc) = degrees relative to x-axis
+            double angle = Math.Atan(rc);                                               // getting angle needed to face destination
+            this.rotate(angle * (180 / Math.PI));                                       // rotates to destination
+            double[] result = { dx, dy };                                               // returns A and B side of triangle
             return result;
         }
 
         // go to specified challenge
         public void goto_chall(Challenge challenge)
         {
-            double[] result = this.rotate_to_chall(challenge);          // rotates to challenge
-            double dx = result[0];                                      // gets A side of triangle
-            double dy = result[1];                                      // gets B side of triangle
+            double[] result = this.rotate_to_chall(challenge);                          // rotates to challenge
+            double dx = result[0];                                                      // gets A side of triangle
+            double dy = result[1];                                                      // gets B side of triangle
 
-            double rel_dist = Math.Sqrt((dx * dx) + (dy * dy));   // gets C side of triangle sqrt( C^2 = A^2 + B^2 ) = C
-            double[] rel_triangle = { rel_dist, dx, dy };               // creates the rel_triangle
-            Robot.scale_triangle = rel_triangle;                         // sets the scale_triangle ( to rel_triangle )
-            double rotations = rel_dist / (Robot.wheel_sizes[Robot.wheel] * Math.PI); // calculates the rotations needed to go to challenge
-            vmotor.forward(rotations);                                    // move forward for rotations
+            double rel_dist = Math.Sqrt((dx * dx) + (dy * dy));                         // gets C side of triangle sqrt( C^2 = A^2 + B^2 ) = C
+            double[] rel_triangle = { rel_dist, dx, dy };                               // creates the rel_triangle
+            Robot.scale_triangle = rel_triangle;                                        // sets the scale_triangle ( to rel_triangle )
+            double rotations = rel_dist / (Robot.wheel_sizes[Robot.wheel] * Math.PI);   // calculates the rotations needed to go to challenge
+            vmotor.forward(rotations);                                                  // move forward for rotations
         }
 
         public void check_path(Challenge challenge)
@@ -339,8 +340,19 @@ namespace RoboJeffV2
 
             Robot robot = new Robot();
 
-            Robot.vmotor.MoveArm(90);
-            Robot.vmotor.MoveArm(-90);
+            Line line1 = new Line(new MPoint(0, 0), new MPoint(10, 10));
+            Rect rect1 = new Rect(new MPoint(11, 2), new MPoint(17, 7));
+
+            if (rect1.intersect(line1))
+            {
+                vars.print("intersect");
+            }
+            else
+            {
+                vars.print("miss");
+            }
+            
+            // source -> https://stackoverflow.com/questions/13513932/algorithm-to-detect-overlapping-periods
         }
     }
 
