@@ -294,7 +294,7 @@ namespace RoboJeff
         }
 
         // go to specified challenge
-        public void goto_chall(Challenge challenge)
+        public void goto_chall(Challenge challenge, ManualResetEvent wait)
         {
             double[] result = this.rotate_to_chall(challenge);                          // rotates to challenge
             double dx = result[0];                                                      // gets A side of triangle
@@ -305,6 +305,7 @@ namespace RoboJeff
             Robot.scale_triangle = rel_triangle;                                        // sets the scale_triangle ( to rel_triangle )
             double rotations = rel_dist / (Robot.wheel_sizes[Robot.wheel] * Math.PI);   // calculates the rotations needed to go to challenge
             vmotor.forward(rotations);                                                  // move forward for rotations
+            wait.Set();
         }
 
         public void check_path(Challenge challenge)
@@ -340,6 +341,13 @@ namespace RoboJeff
 
             Robot robot = new Robot();
 
+            ManualResetEvent wait = new ManualResetEvent(false);
+
+            robot.goto_chall(chal_1, wait);
+
+            wait.WaitOne();
+            // execute challenge
+
             Line line1 = new Line(new MPoint(0, 0), new MPoint(10, 10));
             Rect rect1 = new Rect(new MPoint(11, 2), new MPoint(17, 7));
 
@@ -352,7 +360,7 @@ namespace RoboJeff
                 vars.print("miss");
             }
             
-            // source -> https://stackoverflow.com/questions/13513932/algorithm-to-detect-overlapping-periods
+            
         }
     }
 

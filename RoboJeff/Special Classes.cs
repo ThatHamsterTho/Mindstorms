@@ -68,8 +68,8 @@ namespace RoboJeff_Special_classes
             else {
                 return false;
             }
-                
 
+            // source -> https://stackoverflow.com/questions/13513932/algorithm-to-detect-overlapping-periods
         }
     }
 }
