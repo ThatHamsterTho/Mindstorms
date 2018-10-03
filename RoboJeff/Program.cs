@@ -287,6 +287,16 @@ namespace RoboJeff
 
         static public V_Motor vmotor = new V_Motor();
 
+        // challenges
+        static public Challenge[] Challenges = new Challenge[] {
+            new Challenge(14, 95, 0, new double[] { 3, 102, 91, 108 }, "M1"),
+            new Challenge(57.5, 65, 0, new double[] { 57.5, 65, 70.5, 95.5 }, "M4"),
+            new Challenge(65, 58.5, 0, new double[] { 65, 58.5, 77.5, 64 }, "M5"),
+            new Challenge(142, 95, 0, new double[] { 142, 95, 165, 107 }, "M9"),
+            new Challenge(153, 77.5, 0, new double[] { 153, 77.5, 166, 90 }, "M10"),
+            new Challenge(112, 30, 0, new double[] { 112, 30, 138, 56 }, "M6"),
+            new Challenge(20, 20, 0, new double[] { 0, 0, 0, 0 }, "basis"),
+        };
         // rotates
 
         public void rotate(double angle)
@@ -432,6 +442,31 @@ namespace RoboJeff
             }
         }
 
+        public bool create_path(Challenge challenge, ManualResetEvent wait, out Challenge[] new_route){
+            bool safe;
+            bool drive = true;
+            Challenge[] route = check_path(challenge, out safe);;
+            foreach(Challenge Chall in Challenges){
+                if(Chall != challenge){
+                    route = check_path(Chall, out safe);
+                    if(!safe){
+                        drive = false;
+                        break;
+                    }
+                }
+            }
+
+            if(drive){
+                goto_chall(challenge, wait);
+                new_route = route;
+                return true;
+            }
+
+            else {
+                new_route = route;
+                return false;
+            }
+        }
         // rotates to the challenge when arrived at the designated challenge stop point
         public void rotate_at_end(Challenge challenge)
         {
@@ -451,21 +486,21 @@ namespace RoboJeff
             // TODO: check x, y position and angle the robot should stand to challenge
 
 
-            Challenge chal_1 = new Challenge(14, 95, 0, new double[] { 3, 102, 91, 108 }, "M1");
-            Challenge chal_2 = new Challenge(57.5, 65, 0, new double[] { 57.5, 65, 70.5, 95.5 }, "M4");
-            Challenge chal_3 = new Challenge(65, 58.5, 0, new double[] { 65, 58.5, 77.5, 64 }, "M5");
-            Challenge chal_4 = new Challenge(142, 95, 0, new double[] { 142, 95, 165, 107 }, "M9");
-            Challenge chal_5 = new Challenge(153, 77.5, 0, new double[] { 153, 77.5, 166, 90 }, "M10");
-            Challenge chal_6 = new Challenge(112, 30, 0, new double[] { 112, 30, 138, 56 }, "M6");
-            Challenge basis = new Challenge(20, 20, 0, new double[] { 0, 0, 0, 0 }, "basis");
-
-
             Robot robot = new Robot();
-
             
             V_Motor vmotor = new V_Motor();
             
             ManualResetEvent wait = new ManualResetEvent(false);
+
+            Challenge[] new_path;
+            if(!robot.create_path(Robot.Challenges[0], wait, out new_path)){
+                for(int i = 0; i < new_path.Length; i++){
+                    robot.goto_chall(new_path[i], wait);
+                    wait.WaitOne();
+                    wait.Reset();
+                }
+            }
+
 
             // beep at end of challenge
             Speaker spk = new Speaker(50);
