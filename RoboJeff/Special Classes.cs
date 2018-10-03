@@ -9,9 +9,9 @@ namespace RoboJeff_Special_classes
 {
     class MPoint {
 
-        public double x, y;
+        public int x, y;
 
-        public MPoint(double x, double y)
+        public MPoint(int x, int y)
         {
             this.x = x;
             this.y = y;
@@ -36,30 +36,6 @@ namespace RoboJeff_Special_classes
         }
     }
 
-    class Function{
-
-        public double rc, b;
-        public Function(double rc, double b){
-            this.rc = rc;
-            this.b = b;
-        }
-        /// <summary>
-        /// returns y value at given x position
-        /// </summary>
-        /// <param name="x"> x value</param>
-        /// <returns> y value</returns>
-        public double at_x(double x){
-            return rc * x + b;
-        }
-        /// <summary>
-        /// return x value at given y position
-        /// </summary>
-        /// <param name="y">y value</param>
-        /// <returns>x value</returns>
-        public double at_y(double y){
-            return (y / rc) - b;
-        }
-    }
 
     class Rect {
 
