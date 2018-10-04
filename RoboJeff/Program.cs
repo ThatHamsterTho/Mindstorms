@@ -31,7 +31,8 @@ namespace RoboJeff
         public static Point p = new Point(10, Lcd.Height - 75);             // point?
         public static Point boxSize = new Point(100, 24);                   // boxsize
         public static Rectangle box = new Rectangle(p, p + boxSize);        // rectangle of the box
-                                                                            /// source -> https://github.com/Larsjep/monoev3/blob/release/LcdExample/Program.cs
+
+        /// source -> https://github.com/Larsjep/monoev3/blob/release/LcdExample/Program.cs
 
         public static void print(string text)
         {
@@ -112,7 +113,7 @@ namespace RoboJeff
 
 
         // forward function using vehicle
-        public void forward(double rotations)
+        public void forward(double rotations, Robot robot)
         {
             Robot_Vehicle.ReverseLeft = false;
             Robot_Vehicle.ReverseRight = false;
@@ -125,20 +126,13 @@ namespace RoboJeff
             WaitHandle wait_event = Robot_Vehicle.Forward(speed, ((uint)tacho_count), true);
             wait_event.WaitOne();
 
-            int tmr = motorR.GetTachoCount();
-            int tml = motorL.GetTachoCount();
-            int tm_average = (int)(tmr + tml) / 2;
-            double dist_travelled = (tm_average / tcpr) * Robot.wheel_sizes[Robot.wheel];
-            double fac = dist_travelled / Robot.scale_triangle[0];
-            Robot.pos[0] = fac * Robot.scale_triangle[1];
-            Robot.pos[1] = fac * Robot.scale_triangle[2];
-
             Robot_Vehicle.Off();
             /// source -> https://github.com/Larsjep/monoev3/blob/release/VehicleExample/Program.cs
             /// Code is heavily changed but inspired by this example.
         }
 
-        public void backward(double rotations){
+        public void backward(double rotations, Robot robot)
+        {
             Robot_Vehicle.ReverseLeft = false;
             Robot_Vehicle.ReverseRight = false;
 
@@ -150,24 +144,15 @@ namespace RoboJeff
             WaitHandle wait_event = Robot_Vehicle.Backward(speed, ((uint)tacho_count), true);
             wait_event.WaitOne();
 
-            int tmr = motorR.GetTachoCount();
-            int tml = motorL.GetTachoCount();
-            int tm_average = (int)(tmr + tml) / 2;
-            double dist_travelled = (tm_average / tcpr) * Robot.wheel_sizes[Robot.wheel];
-            double fac = dist_travelled / Robot.scale_triangle[0];
-            Robot.pos[0] = fac * Robot.scale_triangle[1];
-            Robot.pos[1] = fac * Robot.scale_triangle[2];
-
             Robot_Vehicle.Off();
             /// source -> https://github.com/Larsjep/monoev3/blob/release/VehicleExample/Program.cs
             /// Code is heavily changed but inspired by this example.
         }
 
         // do not input 360 or 0 degrees due to loop back error
-        public void Rotate(double degrees, bool dir = true)
+        public void Rotate(double degrees, Robot robot, bool dir = true)
         {
-            const int error_marge = 0;
-            degrees = Math.Abs(degrees) - error_marge;
+            degrees = Math.Abs(degrees);
 
             ButtonEvents buts = new ButtonEvents();
             bool done = false;
@@ -205,7 +190,7 @@ namespace RoboJeff
             motorL.Brake();
             motorR.Brake();
 
-            Robot.angle = curr_turned;
+            robot.angle = Math.Abs(curr_turned);
         }
 
         public void MoveArm(double degrees, int speed = 100, bool down = false, int time = 0)
@@ -219,7 +204,8 @@ namespace RoboJeff
 
             WaitHandle WaitHandle_up = motorArm.PowerProfile((sbyte)speed, 0, (uint)degrees, 0, true);
             WaitHandle_up.WaitOne();
-            if(down){
+            if (down)
+            {
                 Thread.Sleep(time);
                 WaitHandle WaitHandle_down = motorArm.PowerProfile((sbyte)-speed, 0, (uint)-degrees, 0, true);
                 WaitHandle_down.WaitOne();
@@ -274,22 +260,32 @@ namespace RoboJeff
 		 * 	  a			  A          b
 		 */
 
-        static public double angle = 0;                                     // the angle the robot stands relative to start point in degrees
-        static public double axle = 14;                                     // diameter of turning circle ( ball bearing end not accounted for )
+        public double angle = 0;                                     // the angle the robot stands relative to start point in degrees
+        public double axle = 14;                                     // diameter of turning circle ( ball bearing end not accounted for )
 
-        static public double[] pos = { 44.5, 25.5 }; // 24, 26 };                            // starting position robot 
-        static public double[] hit_box = { pos[0], pos[1], 31+pos[0], 14+pos[1] };                  // the hitbox of the robot
+        public double[] pos = { 44.5, 25.5 };                        // starting position robot 
+        public double[] hit_box = { 0, 0, 31, 14 };                  // the hitbox of the robot
 
-        static public double[] wheel_sizes = { 4.3, 5.6, 6.9 };             // the diameters of the wheel sizes
-        static public int wheel = 1;                                        // current wheel size being used.
+        public double[] wheel_sizes = { 4.3, 5.6, 6.9 };             // the diameters of the wheel sizes
+        public int wheel = 1;                                        // current wheel size being used.
 
-        static public double[] scale_triangle = new double[3];              // the triange of the path the robot is taking C being the path A being the X-size and B being the Y-size
+        public double[] scale_triangle = new double[3];              // the triange of the path the robot is taking C being the path A being the X-size and B being the Y-size
 
-        static public V_Motor vmotor = new V_Motor();
+        public V_Motor vmotor = new V_Motor();
 
+        // challenges
+        public Challenge[] Challenges = new Challenge[] {
+            new Challenge(14, 95, 0, new double[] { 3, 102, 91, 108 }, "M1"),
+            new Challenge(81.5, 81, 0, new double[] { 57.5, 65, 70.5, 95.5 }, "M4"),
+            new Challenge(65, 58.5, 0, new double[] { 65, 58.5, 77.5, 64 }, "M5"),
+            new Challenge(142, 95, 0, new double[] { 142, 95, 165, 107 }, "M9"),
+            new Challenge(153, 77.5, 0, new double[] { 153, 77.5, 166, 90 }, "M10"),
+            new Challenge(112, 30, 0, new double[] { 112, 30, 138, 56 }, "M6"),
+            new Challenge(20, 20, 0, new double[] { 0, 0, 0, 0 }, "basis"),
+        };
         // rotates
 
-        public void rotate(double angle)
+        public void rotate(double angle, Robot robot)
         {
             /* theoretical way of turning
 			 * 
@@ -299,20 +295,20 @@ namespace RoboJeff
 			 * this.angle = angle;																<- setting the angle to new angle
 			 */
 
-            // change angle that is less than 0 to 180 - angle
+            // change angle that is less than 0 to 180 + angle
             if (angle < 0)
             {
-                vmotor.Rotate(180 + angle);
+                vmotor.Rotate(180 + angle, robot);
             }
             else
             {
-                vmotor.Rotate(angle);
+                vmotor.Rotate(angle, robot);
             }
         }
 
         // rotates to specified challenge
 
-        public double[] rotate_to_chall(Challenge challenge)
+        public double[] rotate_to_chall(Challenge challenge, Robot robot)
         {
             double x = challenge.pos[0];
             double y = challenge.pos[1];
@@ -320,123 +316,36 @@ namespace RoboJeff
             double dy = y - pos[1];                                                     // getting B side of triangle
             double rc = dy / dx;                                                        // rc needed to get rotation needed to face destination ( atan(rc) = degrees relative to x-axis
             double angle = Math.Atan(rc);                                               // getting angle needed to face destination
-            this.rotate(angle * (180 / Math.PI));                                       // rotates to destination
+            this.rotate(angle * (180 / Math.PI), robot);                                // rotates to destination
             double[] result = { dx, dy };                                               // returns A and B side of triangle
             return result;
         }
 
         // go to specified challenge
-        public void goto_chall(Challenge challenge, ManualResetEvent wait)
+        public void goto_chall(Challenge challenge, Robot robot, AutoResetEvent wait)
         {
-            double[] result = this.rotate_to_chall(challenge);                          // rotates to challenge
+            double[] result = this.rotate_to_chall(challenge, robot);                   // rotates to challenge
             double dx = result[0];                                                      // gets A side of triangle
             double dy = result[1];                                                      // gets B side of triangle
 
             double rel_dist = Math.Sqrt((dx * dx) + (dy * dy));                         // gets C side of triangle sqrt( C^2 = A^2 + B^2 ) = C
             double[] rel_triangle = { rel_dist, dx, dy };                               // creates the rel_triangle
-            Robot.scale_triangle = rel_triangle;                                        // sets the scale_triangle ( to rel_triangle )
-            double rotations = rel_dist / (Robot.wheel_sizes[Robot.wheel] * Math.PI);   // calculates the rotations needed to go to challenge
-            vmotor.forward(rotations);                                                  // move forward for rotations
+            scale_triangle = rel_triangle;                                              // sets the scale_triangle ( to rel_triangle )
+            double rotations = rel_dist / (wheel_sizes[wheel] * Math.PI);               // calculates the rotations needed to go to challenge
+            vmotor.forward(rotations, robot);                                           // move forward for rotations
+            pos = challenge.pos;
             this.rotate_at_end(challenge);
             wait.Set();
         }
 
-        public Challenge[] check_path(Challenge challenge, out bool safe)
-        {
-            Challenge[] new_route = new Challenge[2];
+        // TODO: add smart movement around objects
 
-            /// ADD THIS -> needed to check if there is anything in the path of the robot
-            // TODO: add check_path function in robot class
-
-            /* NOTE:
-            *  to check path, you need 2 lines and a rectangular hitbox
-            *  the 1st based on the left side of the robot and the 2nd is based on the right side
-            *  if either line hits the rectangle a new route is needed
-            *  both lines are based on the middle part of the robot, where the x and y coordinates
-            *  are known and then half the diameter is removed and added from the starting value (b)
-            *  to get the new lines
-            */
-
-            /* get the middle route line:
-            *  y = rc * x + b <- needing this type of function to get 2nd pos
-            *  y and x are known in the pos array: pos[0], pos[1]
-            *  rc is known by the inverse tan of the current angle: Math.Atan(angle)
-            *  and b is known by: (y / rc) - x = b
-            */
-            
-            // creates point 2 needed to make the line
-            // the x is the distance towards the destination
-            double dx = challenge.pos[0] - pos[0];                                      // gets A side of triangle
-            double dy = challenge.pos[1] - pos[1];                                      // gets B side of triangle
-            double rel_dist = Math.Sqrt((dx * dx) + (dy * dy));                         // gets C side of triangle sqrt( C^2 = A^2 + B^2 ) = C
-            
-            double angle = Math.Atan(dy/dx);
-            double b = (pos[1] / Math.Tan(angle)) - pos[0];
-            double y = Math.Atan(angle) * rel_dist + b;                                 // the middle route line
-            double b_diff = 1 / Math.Cos(angle) * (axle / 2);                           // this is the b difference modifier, needed to keep the lines at a constant distance from each other
-            // point 1 is the current position of the robot
-            // point 2 is the destination position of the robot (rel_dist, y)             
-            MPoint originL = new MPoint(pos[0], pos[1] + b_diff);
-            MPoint originR = new MPoint(pos[0], pos[1] - b_diff);
-            MPoint destL = new MPoint(rel_dist, y + b_diff);
-            MPoint destR = new MPoint(rel_dist, y - b_diff);
-            Line L_routeL = new Line(originL, destL);
-            Line L_routeR = new Line(originL, destL);
-            Rect Chal_rect = new Rect(new MPoint(challenge.hit_box[0], challenge.hit_box[1]),
-                                      new MPoint(challenge.hit_box[2], challenge.hit_box[3]));
-
-            if(Chal_rect.intersect(L_routeL) || Chal_rect.intersect(L_routeR)){
-                Function F_routeL = new Function(Math.Tan(angle), b + b_diff);
-                Function F_routeR = new Function(Math.Tan(angle), b - b_diff);
-                
-                int scenario;
-                if(Chal_rect.intersect(L_routeL)){
-                    scenario = 1;
-                }
-                else {
-                    scenario = 2;
-                }
-
-                switch (scenario){
-                    case 0:
-                        // both routes intersect.
-                        // check the difference of length to both sides, if either side is less go that side
-                        // --------*------*---- -> go more right and check path
-                        // ---*-----*---------- -> go more left and check path ( check the difference at the end of the rectangle)
-                        // possible state, not needed
-
-                        break;
-                    case 1:
-                        // left route intersects
-                        // go more right check new route
-                        // get the challenge hitbox[3,1] for the down right corner, and add 15 to both values as the new destination
-                        new_route[0] = new Challenge(challenge.hit_box[3] + 15, challenge.hit_box[1] + 15, 0, new double[] {0,0,0,0}, "new_route_1");
-                        new_route[1] = challenge;
-                        break;
-                    
-                    case 2:
-                        // right route intersects
-                        // go more left check new route
-                        // get the challenge hitbox[0,4] for the upper left corner, and add 15 to both values as the new destination
-                        new_route[0] = new Challenge(challenge.hit_box[0] + 15, challenge.hit_box[4] + 15, 0, new double[] {0,0,0,0}, "new_route_1");
-                        new_route[1] = challenge;
-                        break;
-                }
-                safe = false;
-                return new_route;
-            }
-            else{
-                safe = true;
-                new_route[0] = challenge;
-                return new_route;
-            }
-        }
 
         // rotates to the challenge when arrived at the designated challenge stop point
         public void rotate_at_end(Challenge challenge)
         {
             // TODO: make this method work
-            //this.rotate(challenge.angle - angle);
+            // this.rotate(challenge.angle - angle);
         }
     }
 
@@ -446,34 +355,30 @@ namespace RoboJeff
     {
         public static void Main(string[] args)
         {
-            /// broke program?
-            // NOTE: Problem was a non-assigned length double array
             // TODO: check x, y position and angle the robot should stand to challenge
-
-
-            Challenge chal_1 = new Challenge(14, 95, 0, new double[] { 3, 102, 91, 108 }, "M1");
-            Challenge chal_2 = new Challenge(57.5, 65, 0, new double[] { 57.5, 65, 70.5, 95.5 }, "M4");
-            Challenge chal_3 = new Challenge(65, 58.5, 0, new double[] { 65, 58.5, 77.5, 64 }, "M5");
-            Challenge chal_4 = new Challenge(142, 95, 0, new double[] { 142, 95, 165, 107 }, "M9");
-            Challenge chal_5 = new Challenge(153, 77.5, 0, new double[] { 153, 77.5, 166, 90 }, "M10");
-            Challenge chal_6 = new Challenge(112, 30, 0, new double[] { 112, 30, 138, 56 }, "M6");
-            Challenge basis = new Challenge(20, 20, 0, new double[] { 0, 0, 0, 0 }, "basis");
-
 
             Robot robot = new Robot();
 
-            
             V_Motor vmotor = new V_Motor();
-            
-            ManualResetEvent wait = new ManualResetEvent(false);
 
-            // beep at end of challenge
-            Speaker spk = new Speaker(50);
-            spk.Beep();
-            Thread.Sleep(100);
-            spk.Beep();
+            AutoResetEvent wait = new AutoResetEvent(false);
+            ButtonEvents buts = new ButtonEvents();
 
+            buts.EnterPressed += () => {
+                wait.Set();
+            };
 
+            wait.WaitOne();
+
+            robot.goto_chall(robot.Challenges[0], robot, wait);
+
+            vars.print($"x = {(int)robot.pos[0]} y = {(int)robot.pos[1]}");
+
+            wait.WaitOne();
+
+            vars.print($"angle = {(int)robot.angle}");
+
+            wait.WaitOne();
         }
     }
 
