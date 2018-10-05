@@ -206,8 +206,9 @@ namespace RoboJeff
             WaitHandle_up.WaitOne();
             if (down)
             {
+                speed = speed * -1;
                 Thread.Sleep(time);
-                WaitHandle WaitHandle_down = motorArm.PowerProfile((sbyte)-speed, 0, (uint)-degrees, 0, true);
+                WaitHandle WaitHandle_down = motorArm.PowerProfile((sbyte)speed, 0, (uint)(degrees - 10), 0, true);
                 WaitHandle_down.WaitOne();
             }
 
@@ -281,11 +282,11 @@ namespace RoboJeff
             new Challenge(142, 95, 0, new double[] { 142, 95, 165, 107 }, "M9"),
             new Challenge(153, 77.5, 0, new double[] { 153, 77.5, 166, 90 }, "M10"),
             new Challenge(112, 30, 0, new double[] { 112, 30, 138, 56 }, "M6"),
-            new Challenge(20, 20, 0, new double[] { 0, 0, 0, 0 }, "basis"),
+            new Challenge(90, 90, 0, new double[] { 0, 0, 0, 0 }, "basis"),
         };
         // rotates
 
-        public void rotate(double angle, Robot robot)
+        public void rotate(double angle, Robot robot, bool direct = true)
         {
             /* theoretical way of turning
 			 * 
@@ -298,17 +299,17 @@ namespace RoboJeff
             // change angle that is less than 0 to 180 + angle
             if (angle < 0)
             {
-                vmotor.Rotate(180 + angle, robot);
+                vmotor.Rotate(180 + angle, robot, direct);
             }
             else
             {
-                vmotor.Rotate(angle, robot);
+                vmotor.Rotate(angle, robot, direct);
             }
         }
 
         // rotates to specified challenge
 
-        public double[] rotate_to_chall(Challenge challenge, Robot robot)
+        public double[] rotate_to_chall(Challenge challenge, Robot robot, bool direct = true)
         {
             double x = challenge.pos[0];
             double y = challenge.pos[1];
@@ -316,15 +317,15 @@ namespace RoboJeff
             double dy = y - pos[1];                                                     // getting B side of triangle
             double rc = dy / dx;                                                        // rc needed to get rotation needed to face destination ( atan(rc) = degrees relative to x-axis
             double angle = Math.Atan(rc);                                               // getting angle needed to face destination
-            this.rotate(angle * (180 / Math.PI), robot);                                // rotates to destination
+            this.rotate(angle * (180 / Math.PI), robot, direct);                                // rotates to destination
             double[] result = { dx, dy };                                               // returns A and B side of triangle
             return result;
         }
 
         // go to specified challenge
-        public void goto_chall(Challenge challenge, Robot robot, AutoResetEvent wait)
+        public void goto_chall(Challenge challenge, Robot robot, AutoResetEvent wait, bool direct = true)
         {
-            double[] result = this.rotate_to_chall(challenge, robot);                   // rotates to challenge
+            double[] result = this.rotate_to_chall(challenge, robot, direct);                   // rotates to challenge
             double dx = result[0];                                                      // gets A side of triangle
             double dy = result[1];                                                      // gets B side of triangle
 
@@ -360,6 +361,7 @@ namespace RoboJeff
             Robot robot = new Robot();
 
             V_Motor vmotor = new V_Motor();
+            V_Sensor vsensor = new V_Sensor();
 
             AutoResetEvent wait = new AutoResetEvent(false);
             ButtonEvents buts = new ButtonEvents();
@@ -368,17 +370,22 @@ namespace RoboJeff
                 wait.Set();
             };
 
-            wait.WaitOne();
-
             robot.goto_chall(robot.Challenges[0], robot, wait);
 
-            vars.print($"x = {(int)robot.pos[0]} y = {(int)robot.pos[1]}");
+            vmotor.MoveArm(140, 100, true, 500);
 
-            wait.WaitOne();
+            vmotor.backward(0.8, robot);
 
-            vars.print($"angle = {(int)robot.angle}");
+            wait.Reset();
+            robot.goto_chall(robot.Challenges[6], robot, wait);
 
-            wait.WaitOne();
+            //wait.WaitOne();
+
+            //robot.goto_chall(robot.Challenges[0], robot, wait);
+
+            //vars.print($"x = {(int)robot.pos[0]} y = {(int)robot.pos[1]}");
+
+            //wait.WaitOne();
         }
     }
 
