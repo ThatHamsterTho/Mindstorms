@@ -51,13 +51,14 @@ namespace RoboJeff
         {
             return color.ReadAsString();
         }
-        */
-
+        
+        
         // value in mm?;
         public int read_US()
         {
             return US.Read();
         }
+        */
 
         // returns value from 360 to -360, negative is turning from right to left, positive is from left to right
         public int read_gyro()
@@ -334,7 +335,6 @@ namespace RoboJeff
         public double[] scale_triangle = new double[3];              // the triange of the path the robot is taking C being the path A being the X-size and B being the Y-size
 
         public V_Motor vmotor = new V_Motor();
-        public V_Sensor vsensor = new V_Sensor();
 
         // challenges
         public Challenge[] Challenges = new Challenge[] {
