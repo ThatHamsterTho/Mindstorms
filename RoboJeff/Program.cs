@@ -341,7 +341,7 @@ namespace RoboJeff
         public Challenge[] Challenges = new Challenge[] {
             new Challenge(14, 95, 0, "M1"),
             new Challenge(94, 75, 0, "M4"),
-            new Challenge(64, 54, 0, "M5"),
+            new Challenge(62, 64, 0, "M5"),
             new Challenge(172, 101.5, -180, "M8"),
             new Challenge(129, 101.5, 0, "M9"),
             new Challenge(153, 77.5, 0, "M10"),
@@ -355,10 +355,10 @@ namespace RoboJeff
             new Challenge(92, 44.5, 0, "base_toN1"),
             new Challenge(54, 80, 0, "N2_fromM4"),
             new Challenge(129, 25, 0, "base_toN4"),
-            new Challenge(167, 42, 0, "N4_toN5"),
-            new Challenge(167, 61, 0, "N5_toM10"),
+            new Challenge(157, 42, 0, "N4_toN5"),
+            new Challenge(157, 61, 0, "N5_toM10"),
             new Challenge(100, 75, 0, "return_to_base_from_M10"),
-            new Challenge(62, 25, 0, "base_toN6")
+            new Challenge(62, 35, 0, "base_toN6")
         };
 
         // rotates
@@ -485,14 +485,28 @@ namespace RoboJeff
             buts.EnterPressed += () => {
                 wait.Set(); 
             };
+
+            robot.goto_chall(robot.Nodes[3], robot, wait, false, true);
+            wait.WaitOne(); wait.Reset();
+            robot.goto_chall(robot.Nodes[4], robot, wait, false);
+            wait.WaitOne(); wait.Reset();
+            robot.goto_chall(robot.Nodes[5], robot, wait, false);
+            wait.WaitOne(); wait.Reset();
+
+            vmotor.forward(1, robot, 30);
+            vmotor.backward(0.7, robot, 30);
+
+            robot.goto_chall(robot.Nodes[6], robot, wait, false);
+
             
+
             robot.goto_chall(robot.Nodes[7], robot, wait, false, true, 30);
             robot.goto_chall(robot.Challenges[2], robot, wait, false, false, 30);
-            // rotate with high speed
+            //rotate with high speed
+            vmotor.MoveArm(-100, 40);
             vmotor.Rotate(70, robot, false, 100);
+            vmotor.MoveArm(100, 40);
             robot.goto_chall(robot.Nodes[0], robot, wait, false, true);
-            
-            //vmotor.backward(3, robot);
         }
     }
 
