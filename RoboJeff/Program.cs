@@ -104,7 +104,7 @@ namespace RoboJeff
         public Motor motorArm = new Motor(MotorPort.OutB);                              // precise motor
         public Vehicle Robot_Vehicle = new Vehicle(MotorPort.OutA, MotorPort.OutD);     // full vehicle control object
 
-        const sbyte speed = 100;                                                         // speed the motors rotate around their axis
+        public const sbyte speed = 100;                                                  // speed the motors rotate around their axis
         const sbyte turn_speed = 10;                                                     // speed the robot turns around
         const uint tcpr = 360;                                                           // Tacho Count Per Rotation, a constant that sets any amount of rotations to the tacho_count used by the motor.
 
@@ -155,7 +155,8 @@ namespace RoboJeff
         /// <param name="degrees"> the amount of degrees the robot should turn </param>
         /// <param name="robot"> the robot class </param>
         /// <param name="dir"> true turns the robot from right to left and false from left to right</param>
-        public void Rotate(double degrees, Robot robot, bool dir = true)
+        /// <param name="turn_speed"> Sets the speed the robot should turn at, default is 10 </param>
+        public void Rotate(double degrees, Robot robot, bool dir = true, sbyte turn_speed = turn_speed)
         {
             // if the robot turns from right to left, the gyro sensor returns negative degree values.
             // thus if the degrees are less than 0 but the gyro sensor is returning positive values,
@@ -326,7 +327,7 @@ namespace RoboJeff
         public double angle = 0;                                     // the angle the robot stands relative to start point in degrees
         public double axle = 14;                                     // diameter of turning circle ( ball bearing end not accounted for )
 
-        public double[] pos = { 44.5, 25.5 };                        // starting position robot 
+        public double[] pos = { 34, 25 };                            // starting position robot 
         public double[] hit_box = { 0, 0, 31, 14 };                  // the hitbox of the robot
 
         public double[] wheel_sizes = { 4.3, 5.6, 6.9 };             // the diameters of the wheel sizes
@@ -340,7 +341,7 @@ namespace RoboJeff
         public Challenge[] Challenges = new Challenge[] {
             new Challenge(14, 95, 0, "M1"),
             new Challenge(94, 75, 0, "M4"),
-            new Challenge(71.5, 45, -90, "M5"),
+            new Challenge(64, 54, 0, "M5"),
             new Challenge(172, 101.5, -180, "M8"),
             new Challenge(129, 101.5, 0, "M9"),
             new Challenge(153, 77.5, 0, "M10"),
@@ -350,13 +351,14 @@ namespace RoboJeff
         // the nodes the robot can drive towards.
         public Challenge[] Nodes = new Challenge[]
         {
-            new Challenge(40.5, 35, 0, "basis"),
+            new Challenge(34, 25, 0, "basis"),
             new Challenge(92, 44.5, 0, "base_toN1"),
             new Challenge(54, 80, 0, "N2_fromM4"),
             new Challenge(129, 25, 0, "base_toN4"),
             new Challenge(167, 42, 0, "N4_toN5"),
             new Challenge(167, 61, 0, "N5_toM10"),
-            new Challenge(100, 75, 0, "return_to_base_from_M10")
+            new Challenge(100, 75, 0, "return_to_base_from_M10"),
+            new Challenge(62, 25, 0, "base_toN6")
         };
 
         // rotates
@@ -432,14 +434,15 @@ namespace RoboJeff
 
         // go to specified challenge
         /// <summary>
-        /// goes to a challenge specified bij challenge param
+        /// goes to a challenge specified bij challenge param.
         /// </summary>
-        /// <param name="challenge"> the challenge to go to </param>
-        /// <param name="robot"> the robot object </param>
-        /// <param name="wait"> the ResetEvent for when the robot has finished driving </param>
-        /// <param name="rotate_at_end"> for if the robot should rotate to challenge rotation when challenged reached</param>
+        /// <param name="challenge"> the challenge to go to. </param>
+        /// <param name="robot"> the robot object. </param>
+        /// <param name="wait"> the ResetEvent for when the robot has finished driving. </param>
+        /// <param name="rotate_at_end"> for if the robot should rotate to challenge rotation when challenged reached. </param>
         /// <param name="reverse_rotate"> forces the angle of the robot to rotate to a negative version of that angle. </param>
-        public void goto_chall(Challenge challenge, Robot robot, AutoResetEvent wait, bool rotate_at_end = true, bool reverse_rotate = false)
+        /// <param name="speed"> the speed the motor should rotate at.</param>
+        public void goto_chall(Challenge challenge, Robot robot, AutoResetEvent wait, bool rotate_at_end = true, bool reverse_rotate = false, sbyte speed = V_Motor.speed)
         {
             double[] result = this.rotate_to_chall(challenge, robot, reverse_rotate);                   // rotates to challenge
             double dx = result[0];                                                      // gets A side of triangle
@@ -449,7 +452,7 @@ namespace RoboJeff
             double[] rel_triangle = { rel_dist, dx, dy };                               // creates the rel_triangle
             scale_triangle = rel_triangle;                                              // sets the scale_triangle ( to rel_triangle )
             double rotations = rel_dist / (wheel_sizes[wheel] * Math.PI);               // calculates the rotations needed to go to challenge
-            vmotor.forward(rotations, robot);                                           // move forward for rotations
+            vmotor.forward(rotations, robot, speed);                                           // move forward for rotations
             pos = challenge.pos;                                                        // sets the position of the robot to that of the challenge, this assumes the robot has reached the challenge
             if (rotate_at_end) { this.rotate_at_end(challenge, robot); }                // rotates the robot to specified angle when robot has reached the challenge
             wait.Set();                                                                 // sets the AutoResetEvent to signal that the robot has finished moving.
@@ -482,21 +485,14 @@ namespace RoboJeff
             buts.EnterPressed += () => {
                 wait.Set(); 
             };
-
-            robot.goto_chall(robot.Nodes[3], robot, wait, false, true);
-            wait.WaitOne(); wait.Reset();
-            robot.goto_chall(robot.Nodes[4], robot, wait, false);
-            wait.WaitOne(); wait.Reset();
-            robot.goto_chall(robot.Nodes[5], robot, wait, false);
-            wait.WaitOne(); wait.Reset();
-
-            vmotor.forward(1, robot, 30);
-            vmotor.backward(0.7, robot, 30);
-
-            robot.goto_chall(robot.Nodes[6], robot, wait, false);
-            robot.goto_chall(robot.Nodes[1], robot, wait, false, true);
+            
+            robot.goto_chall(robot.Nodes[7], robot, wait, false, true, 30);
+            robot.goto_chall(robot.Challenges[2], robot, wait, false, false, 30);
+            // rotate with high speed
+            vmotor.Rotate(70, robot, false, 100);
             robot.goto_chall(robot.Nodes[0], robot, wait, false, true);
-
+            
+            //vmotor.backward(3, robot);
         }
     }
 
