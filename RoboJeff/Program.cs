@@ -104,13 +104,13 @@ namespace RoboJeff
         public Motor motorArm = new Motor(MotorPort.OutB);                              // precise motor
         public Vehicle Robot_Vehicle = new Vehicle(MotorPort.OutA, MotorPort.OutD);     // full vehicle control object
 
-        const sbyte speed = 127;                                                         // speed the motors rotate around their axis
+        const sbyte speed = 100;                                                         // speed the motors rotate around their axis
         const sbyte turn_speed = 10;                                                     // speed the robot turns around
         const uint tcpr = 360;                                                           // Tacho Count Per Rotation, a constant that sets any amount of rotations to the tacho_count used by the motor.
 
 
         // forward function using vehicle
-        public void forward(double rotations, Robot robot)
+        public void forward(double rotations, Robot robot, sbyte speed = speed)
         {
             // resets the tacho count to 0 for both motors.
             motorL.ResetTacho();
@@ -129,7 +129,7 @@ namespace RoboJeff
             /// Code is heavily changed but inspired by this example.
         }
 
-        public void backward(double rotations, Robot robot)
+        public void backward(double rotations, Robot robot, sbyte speed = speed)
         {
             // resets the tacho count to 0 for both motors.
             motorL.ResetTacho();
@@ -350,12 +350,13 @@ namespace RoboJeff
         // the nodes the robot can drive towards.
         public Challenge[] Nodes = new Challenge[]
         {
-            new Challenge(44.5, 25.5, 0, "basis"),
-            new Challenge(92, 44.5, 0, "N1_toM4"),
+            new Challenge(40.5, 35, 0, "basis"),
+            new Challenge(92, 44.5, 0, "base_toN1"),
             new Challenge(54, 80, 0, "N2_fromM4"),
-            new Challenge(129, 25, 0, "N3_toN4"),
-            new Challenge(162, 42, 0, "N4_toN5"),
-            new Challenge(159, 61, 0, "N4_toDUWCHALL")
+            new Challenge(129, 25, 0, "base_toN4"),
+            new Challenge(167, 42, 0, "N4_toN5"),
+            new Challenge(167, 61, 0, "N5_toM10"),
+            new Challenge(100, 75, 0, "return_to_base_from_M10")
         };
 
         // rotates
@@ -421,7 +422,8 @@ namespace RoboJeff
             {
                 angle = -180 + angle;
             }
-            
+            vars.print($"rotate {angle} degrees");
+            Thread.Sleep(1000);
             this.rotate(angle, robot);                                                  // rotates to destination
             double[] result = { dx, dy };                                               // returns A and B side of triangle
 
@@ -488,12 +490,12 @@ namespace RoboJeff
             robot.goto_chall(robot.Nodes[5], robot, wait, false);
             wait.WaitOne(); wait.Reset();
 
-            vmotor.forward(1.5, robot);
-            vmotor.backward(0.7, robot);
+            vmotor.forward(1, robot, 30);
+            vmotor.backward(0.7, robot, 30);
 
-            robot.rotate(-35, robot);
-
-            robot.goto_chall(robot.Nodes[2], robot, wait, false);
+            robot.goto_chall(robot.Nodes[6], robot, wait, false);
+            robot.goto_chall(robot.Nodes[1], robot, wait, false, true);
+            robot.goto_chall(robot.Nodes[0], robot, wait, false, true);
 
         }
     }
