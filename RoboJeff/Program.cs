@@ -24,8 +24,6 @@ namespace RoboJeff
         public static Point boxSize = new Point(100, 24);                   // boxsize
         public static Rectangle box = new Rectangle(p, p + boxSize);        // rectangle of the box
 
-        /// source -> https://github.com/Larsjep/monoev3/blob/release/LcdExample/Program.cs
-
         // debug print function
         public static void print(string text)
         {
@@ -125,8 +123,6 @@ namespace RoboJeff
             
             // turns the motors off.
             Robot_Vehicle.Off();
-            /// source -> https://github.com/Larsjep/monoev3/blob/release/VehicleExample/Program.cs
-            /// Code is heavily changed but inspired by this example.
         }
 
         public void backward(double rotations, Robot robot, sbyte speed = speed)
@@ -144,8 +140,6 @@ namespace RoboJeff
 
             // turns the motors off.
             Robot_Vehicle.Off();
-            /// source -> https://github.com/Larsjep/monoev3/blob/release/VehicleExample/Program.cs
-            /// Code is heavily changed but inspired by this example.
         }
 
         // do not input 360 or 0 degrees due to loop back error
@@ -243,9 +237,9 @@ namespace RoboJeff
         /// <param name="speed"> the speed the arm should turn</param>
         /// <param name="down"> if the arm should also go back down after going up </param>
         /// <param name="time"> the time between going up and down </param>
-        public void MoveArm(double degrees, int speed = 100, bool down = false, int time = 0)
+        public void MoveArm(double degrees, int speed = 127, bool down = false, int time = 0)
         {
-            // this is used to also be able to move the arm down, when moving the arm down, the speed is negative, but the degrees are still positive.
+            // this is used to also be able to move the arm down, when moving the arm down, the speed is negative, but the degrees are still positive (Mats).
             if (degrees < 0)
             {
                 speed = speed * -1;
@@ -337,7 +331,7 @@ namespace RoboJeff
 
         public V_Motor vmotor = new V_Motor();
 
-        // challenges
+        // challenges (Mats)
         public Challenge[] Challenges = new Challenge[] {
             new Challenge(14, 95, 0, "M1"),
             new Challenge(94, 75, 0, "M4"),
@@ -348,7 +342,7 @@ namespace RoboJeff
             new Challenge(112, 30, 0, "M6"),
             
         };
-        // the nodes the robot can drive towards.
+        // the nodes the robot can drive towards.(Mats)
         public Challenge[] Nodes = new Challenge[]
         {
             new Challenge(34, 25, 0, "basis"),
@@ -357,6 +351,7 @@ namespace RoboJeff
             new Challenge(129, 25, 0, "base_toN4"),
             new Challenge(157, 42, 0, "N4_toN5"),
             new Challenge(157, 61, 0, "N5_toM10"),
+            new Challenge(152, 47, 0, "(from M10 node) SMASH NODE"),
             new Challenge(100, 75, 0, "return_to_base_from_M10"),
             new Challenge(62, 35, 0, "base_toN6")
         };
@@ -424,8 +419,6 @@ namespace RoboJeff
             {
                 angle = -180 + angle;
             }
-            vars.print($"rotate {angle} degrees");
-            Thread.Sleep(1000);
             this.rotate(angle, robot);                                                  // rotates to destination
             double[] result = { dx, dy };                                               // returns A and B side of triangle
 
@@ -444,7 +437,7 @@ namespace RoboJeff
         /// <param name="speed"> the speed the motor should rotate at.</param>
         public void goto_chall(Challenge challenge, Robot robot, AutoResetEvent wait, bool rotate_at_end = true, bool reverse_rotate = false, sbyte speed = V_Motor.speed)
         {
-            double[] result = this.rotate_to_chall(challenge, robot, reverse_rotate);                   // rotates to challenge
+            double[] result = this.rotate_to_chall(challenge, robot, reverse_rotate);   // rotates to challenge
             double dx = result[0];                                                      // gets A side of triangle
             double dy = result[1];                                                      // gets B side of triangle
 
@@ -452,7 +445,7 @@ namespace RoboJeff
             double[] rel_triangle = { rel_dist, dx, dy };                               // creates the rel_triangle
             scale_triangle = rel_triangle;                                              // sets the scale_triangle ( to rel_triangle )
             double rotations = rel_dist / (wheel_sizes[wheel] * Math.PI);               // calculates the rotations needed to go to challenge
-            vmotor.forward(rotations, robot, speed);                                           // move forward for rotations
+            vmotor.forward(rotations, robot, speed);                                    // move forward for rotations
             pos = challenge.pos;                                                        // sets the position of the robot to that of the challenge, this assumes the robot has reached the challenge
             if (rotate_at_end) { this.rotate_at_end(challenge, robot); }                // rotates the robot to specified angle when robot has reached the challenge
             wait.Set();                                                                 // sets the AutoResetEvent to signal that the robot has finished moving.
@@ -461,8 +454,8 @@ namespace RoboJeff
         // rotates to the challenge when arrived at the designated challenge stop point
         public void rotate_at_end(Challenge challenge, Robot robot)
         {
-            angle = (challenge.angle - this.angle);                                 // gets the difference between challenge angle and current angle and sets that as rotation angle
-            this.rotate(angle, robot);                                              // rotates specified angle.
+            angle = (challenge.angle - this.angle);                                     // gets the difference between challenge angle and current angle and sets that as rotation angle
+            this.rotate(angle, robot);                                                  // rotates specified angle.
         }
     }
 
@@ -486,27 +479,20 @@ namespace RoboJeff
                 wait.Set(); 
             };
 
-            robot.goto_chall(robot.Nodes[3], robot, wait, false, true);
+            robot.goto_chall(robot.Nodes[3], robot, wait, false, true, 100);
             wait.WaitOne(); wait.Reset();
-            robot.goto_chall(robot.Nodes[4], robot, wait, false);
+            robot.goto_chall(robot.Nodes[4], robot, wait, false, false, 100);
             wait.WaitOne(); wait.Reset();
-            robot.goto_chall(robot.Nodes[5], robot, wait, false);
+            robot.goto_chall(robot.Nodes[5], robot, wait, false, false, 100);
+            wait.WaitOne(); wait.Reset();
+            robot.goto_chall(robot.Nodes[6], robot, wait, false, true, 100);
             wait.WaitOne(); wait.Reset();
 
-            vmotor.forward(1, robot, 30);
-            vmotor.backward(0.7, robot, 30);
+            vmotor.MoveArm(-120, 127, true, 100);
 
-            robot.goto_chall(robot.Nodes[6], robot, wait, false);
+            robot.goto_chall(robot.Nodes[3], robot, wait, false, true, 100);
+            robot.goto_chall(robot.Nodes[0], robot, wait, false, false, 100);
 
-            
-
-            robot.goto_chall(robot.Nodes[7], robot, wait, false, true, 30);
-            robot.goto_chall(robot.Challenges[2], robot, wait, false, false, 30);
-            //rotate with high speed
-            vmotor.MoveArm(-100, 40);
-            vmotor.Rotate(70, robot, false, 100);
-            vmotor.MoveArm(100, 40);
-            robot.goto_chall(robot.Nodes[0], robot, wait, false, true);
         }
     }
 
